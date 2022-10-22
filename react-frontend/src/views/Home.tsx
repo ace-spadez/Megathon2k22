@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Header from "../components/Header";
 import Plot from "react-plotly.js";
 
@@ -6,40 +6,49 @@ const Home = () => {
   const [src, setSrc] = React.useState([])
   const [dst, setDst] = React.useState([])  
   const [rev, setRev] = React.useState(0)
+  const [rawdata, setRawData] = React.useState(raw_data)
   // const nodes = {}
   // raw_data["nodes"].map(x => nodes[x[0]] = x)
+  useEffect(() => {
+    let p = {};
+    p["edges"] = rawdata["edges"];
+    p["nodes"] = rawdata["nodes"].filter(x => x[0]!=src[0] && x[0]!=dst[0]);
+    setRawData(p);
+
+
+  }, [src,dst]);
   const data = [
     {
       type: "scattermapbox",
       mode: "markers",
-      lon: raw_data["nodes"].filter(x => src.length > 0? x[2] != src[2]:true).map(x => x[2]),
-      lat: raw_data["nodes"].filter(x => src.length > 0? x[1] != src[1]:true).map(x => x[1]),
+      lon: rawdata["nodes"].map(x => x[2]),
+      lat: rawdata["nodes"].map(x => x[1]),
       hoverinfo: "text",
-      hovertext: raw_data["nodes"].map(x => x[0]),
+      hovertext: rawdata["nodes"].map(x => x[0]),
     },
     src.length!=0?{
       type: "scattermapbox",
       mode: "markers",
-      lon: src[2],
-      lat: src[1],
+      lon: [src[2]],
+      lat: [src[1]],
       hoverinfo: "text",
       marker: {
         size: 17,
         color: 'red',
       },
-      hovertext: src[0],
+      hovertext: [src[0]],
     }:{},
     dst.length!=0?{
       type: "scattermapbox",
       mode: "markers",
-      lon: dst[2],
-      lat: dst[1],
+      lon: [dst[2]],
+      lat: [dst[1]],
       hoverinfo: "text",
       marker: {
         size: 17,
-        color: 'red',
+        color: 'black',
       },
-      hovertext: dst[0],
+      hovertext: [dst[0]],
     }:{},
   ];
   console.log(rev)
