@@ -5,22 +5,30 @@
   "homepage": "https://demos.creative-tim.com/black-dashboard-react/#/admin/dashboard",
   "dependencies": {
     "@fortawesome/fontawesome-free": "6.1.1",
+    "@mapbox/mapbox-gl-directions": "^4.1.0",
     "bootstrap": "4.5.3",
     "chart.js": "3.4.1",
     "classnames": "2.3.1",
+    "mapbox-gl": "^2.10.0",
     "perfect-scrollbar": "1.5.5",
     "prop-types": "15.8.1",
-    "react": "18.2.0",
+    "react": ">=16.8.0",
     "react-chartjs-2": "3.0.4",
-    "react-dom": "18.2.0",
+    "react-dom": ">=16.8.0",
+    "react-mapbox-gl": "^5.1.1",
     "react-notification-alert": "0.0.13",
     "react-router-dom": "5.2.0",
     "react-scripts": "5.0.1",
     "reactstrap": "8.7.1",
     "sass": "1.53.0"
   },
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false
+  },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "build": "react-scripts build && gulp licenses",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
@@ -50,4 +58,5 @@
     "gulp": "4.0.2",
     "gulp-append-prepend": "1.0.9"
   }
+
 }
