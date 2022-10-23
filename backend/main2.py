@@ -46,20 +46,18 @@ def find_likeability():
     edges = request.json["edges"]
 
     # Use ML model for scoring once ready
-    scores = {
-        "data": [
-            user_preference["safety"]
-            * ((1 - edge["accidents"]) + (1 - edge["close_calls"]))
-            + user_preference["smoothness"]
-            * ((1 - edge["bumps_and_potholes"]) + edge["width"])
-            + user_preference["ambience"] * (1 - edge["noise"])
-            + user_preference["privacy"] * (1 - edge["num_cctv"])
-            + user_preference["mobile_network"] * edge["mobile_network"]
-            + user_preference["view"] * (edge["touristy"] + edge["visibility"])
-            + user_preference["charging_stations"] * edge["charging_stations"]
-            for edge in edges
-        ]
-    }
+    scores = {"data": [
+        user_preference["safety"]
+        * ((1 - edge["accidents"]) + (1 - edge["close_calls"]))
+        + user_preference["smoothness"]
+        * ((1 - edge["bumps_and_potholes"]) + edge["width"])
+        + user_preference["ambience"] * (1 - edge["noise"])
+        + user_preference["privacy"] * (1 - edge["num_cctv"])
+        + user_preference["mobile_network"] * edge["mobile_network"]
+        + user_preference["view"] * (edge["touristy"] + edge["visibility"])
+        + user_preference["charging_stations"] * edge["charging_stations"]
+        for edge in edges
+    ]}
 
     # print(user_preference, edges, scores)
     # print(json.dumps(scores))
@@ -136,7 +134,6 @@ class Graph2:
             if u == v:
                 continue
             for ct in range(self.TMAX):
-                self.graph[(u, ct)] = []
                 if ct + t >= self.TMAX:
                     break
                 self.graph[(u, ct)].append(((v, ct + t), -l, id))
@@ -145,54 +142,55 @@ class Graph2:
     def closest_route(self, src, dst, request_time):
         dist, parent = {}, {}
         history = defaultdict(list)
-        unvisited = set()
         for node in self.graph.keys():
             dist[node] = self.INF
             history[node[0]] = [node[0]]
-            unvisited.add(node)
+            for u, _, _ in self.graph[node]:
+                dist[u] = self.INF
+                history[u[0]] = [u[0]]
 
         dist[(src, 0)] = 0
+        for _ in range(len(self.graph.keys())):
+            for u in self.graph.keys():
+                for v, w, id in self.graph[u]:
+                    if (
+                        dist[u] != self.INF
+                        and dist[u] + w < dist[v]
+                        and v[0] not in history[u[0]]
+                    ):
+                        dist[v] = dist[u] + w
+                        parent[v] = (u, id)
+                        history[v[0]] = history[u[0]] + [v[0]]
 
-        while len(unvisited) > 0:
-            minDistance = self.INF
-            minVertex = src
-            for v in unvisited:
-                if dist[v] < minDistance:
-                    minDistance = dist[v]
-                    minVertex = v
-            if minDistance == self.INF:
-                break
-            u = minVertex
-            if u[0] == dst:
-                unvisited.remove(u)
-                continue
-            unvisited.remove(u)
-            # print(u[0])
-            for nbrEdge in self.graph[u]:
-                v, w, id = nbrEdge[0], float(nbrEdge[1]), nbrEdge[2]
-                newD = dist[u] + w
-                print("V", v, newD)
-                if newD < dist[v] and v[0] not in history[u[0]]:
-                    print("V", v, newD)
-                    dist[v] = newD
-                    parent[v] = (id, u)
-                    history[v[0]] = history[u[0]] + [v[0]]
+        for u in self.graph.keys():
+            for v, w, id in self.graph[u]:
+                if (
+                    dist[u] != self.INF
+                    and dist[u] + w < dist[v]
+                    and v[0] not in history[u[0]]
+                ):
+                    print("Not Working!")
 
-        best_hate, node = self.INF, -1
+        best_likeability, node = 0, -1
         for t in range(request_time + 1):
-            if (dst, t) in dist:
-                print(dst, t, dist[(dst, t)])
-            if (dst, t) in dist and dist[(dst, t)] < best_hate:
-                best_hate = dist[(dst, t)]
+            if (dst, t) not in dist:
+                continue
+            if dist[(dst, t)] < best_likeability:
+                best_likeability = dist[(dst, t)]
                 node = (dst, t)
 
-        path, curr = [], node
+        if node == -1:
+            return ""
+
+        curr = node
+        path = []
         while curr != (src, 0):
-            id = parent[curr][0]
+            p, id = parent[curr]
+            curr = p
             path.append(id)
-            curr = parent[curr][1]
-        path.reverse()
-        return json.dumps({"likeability": 1 / best_hate, "path": path})
+
+        print("Path found")
+        return json.dumps({"likeability": -1 * best_likeability, "path": path})
 
 
 @app.route("/find-closest-route", methods=["POST"])
