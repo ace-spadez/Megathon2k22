@@ -1,22 +1,34 @@
 import React, { useEffect } from "react";
 import Header from "../components/Header";
 import Plot from "react-plotly.js";
+import axios from "axios";
 
 const Home = () => {
   const [src, setSrc] = React.useState([])
   const [dst, setDst] = React.useState([])  
   const [rev, setRev] = React.useState(0)
+  const [path, setPath] = React.useState([])
   const [rawdata, setRawData] = React.useState(raw_data)
-  // const nodes = {}
-  // raw_data["nodes"].map(x => nodes[x[0]] = x)
+  const [editMode, setEditMode] = React.useState(false)
+  const [v1,setv1] = React.useState([]);
+  const [v2,setv2] = React.useState([]);
+  const nodes = {}
+  raw_data["nodes"].map(x => nodes[x[0]] = x)
+
   useEffect(() => {
     let p = {};
     p["edges"] = rawdata["edges"];
     p["nodes"] = rawdata["nodes"].filter(x => x[0]!=src[0] && x[0]!=dst[0]);
     setRawData(p);
-
-
   }, [src,dst]);
+
+  // useEffect(async () => {
+    // d = await axios.post('http://localhost:5000/init', {
+    //   data: raw_data["edges"]
+    // });
+    // setRawData(d);
+  // },[]);
+
   const data = [
     {
       type: "scattermapbox",
@@ -26,6 +38,16 @@ const Home = () => {
       hoverinfo: "text",
       hovertext: rawdata["nodes"].map(x => x[0]),
     },
+    path.length!=0?{
+      type: "scattermapbox",
+      mode: "lines",
+      lon: path.map(x => nodes[x[1]][2]),
+      lat: path.map(x => nodes[x[1]][1]),
+      line: {
+        width: 3,
+        color: 'black'
+      },
+    }:{},
     src.length!=0?{
       type: "scattermapbox",
       mode: "markers",
@@ -50,8 +72,44 @@ const Home = () => {
       },
       hovertext: [dst[0]],
     }:{},
+    v1.length!=0?{
+      type: "scattermapbox",
+      mode: "markers",
+      lon: [v1[2]],
+      lat: [v1[1]],
+      hoverinfo: "text",
+      marker: {
+        size: 10,
+        color: 'green',
+      },
+      hovertext: [v1[0]],
+    }:{},
+    v2.length!=0?{
+      type: "scattermapbox",
+      mode: "markers",
+      lon: [v2[2]],
+      lat: [v2[1]],
+      hoverinfo: "text",
+      marker: {
+        size: 10,
+        color: 'green',
+      },
+      hovertext: [v2[0]],
+    }:{},
+    v2.length!=0 && v1.length!=0?{
+      type: "scattermapbox",
+      mode: "lines",
+      lon: [v1[2],v2[2]],
+      lat: [v1[1],v2[1]],
+      line: {
+        width: 3,
+        color: 'green'
+      },
+    }:{
+
+    }
   ];
-  console.log(rev)
+  console.log(data)
   return (
     <React.Fragment>
       <Header title="Home" />
@@ -62,6 +120,7 @@ const Home = () => {
             revision={rev}
             data={data}
             layout={{
+              showlegend: false,
               autosize: true,
               hovermode:'closest',
               mapbox: {
@@ -89,19 +148,36 @@ const Home = () => {
             }}
             onClick={
               (x) => {
-                console.log(x)
-                console.log(src, dst)
+                const node = [x["points"][0]["hovertext"],x["points"][0]["lat"],x["points"][0]["lon"]];
+                if(editMode==false){
+  
                 if (src.length == 0){
-                  console.log("here")
-                  setSrc([x["points"][0]["hovertext"],x["points"][0]["lat"],x["points"][0]["lon"]])
-                  setRev(rev + 1)
+                  setSrc(node)
                 } else if (dst.length == 0) {
-                  console.log("her2e")
-                  setDst([x["points"][0]["hovertext"],x["points"][0]["lat"],x["points"][0]["lon"]])
-                  setRev(rev + 1)
+                  setDst(node)
                 }
+              } else {
+                if (v1.length == 0){
+                  setv1(node)
+                } else if (v2.length == 0) {
+                  setv2(node)
+                }
+              }
             }}
           />
+          <div>
+            <button onClick={
+              async(e) => { 
+                
+                const ourPath = [1, 2, 3, 4, 5]
+                const pathEdges = ourPath.map((x) => raw_data["edges"][x])
+                setPath(pathEdges) 
+                console.log(pathEdges)
+                setRev(rev + 1)
+              }
+            }> Calculate Optimal Path</button>
+            <button onClick={(e)=>{setEditMode(!editMode)}}>Edit Mode</button>
+          </div>
           {/* /End replace */}
         </div>
       </main>
