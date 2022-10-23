@@ -22,12 +22,26 @@ const Home = () => {
     setRawData(p);
   }, [src,dst]);
 
-  // useEffect(async () => {
-    // d = await axios.post('http://localhost:5000/init', {
-    //   data: raw_data["edges"]
-    // });
-    // setRawData(d);
-  // },[]);
+  useEffect(async () => {
+    // const d = await axios.post(, raw_data);
+    // console.log(d);
+    const data = await fetch('http://localhost:5000/init', {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(raw_data)
+    });
+    console.log(await data.json());
+  },[]);
+
+  const edge_selected = v2.length!=0 && v1.length!=0
+
+  if(edge_selected){
+    console.log(v1,v2)
+  }
+
 
   const data = [
     {
@@ -115,7 +129,6 @@ const Home = () => {
       <Header title="Home" />
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Replace with your content */}
           <Plot
             revision={rev}
             data={data}
