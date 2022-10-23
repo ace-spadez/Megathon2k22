@@ -186,6 +186,7 @@ const Home = () => {
       <Button
         variant="primary"
         onClick={async () => {
+          console.log("BUTTTON");
           const resp = await fetch("http://127.0.0.1:5000/find-min-time-path", {
             method: "POST",
             mode: "cors",
@@ -207,7 +208,7 @@ const Home = () => {
           setRev(rev + 1);
         }}
       >
-        Get Optimal Route
+        Get Time Optimal Route
       </Button>
     );
   }
@@ -452,15 +453,6 @@ const Home = () => {
           />
           <div>
             <Col>
-            <Button
-              onClick={async (e) => {
-                const ourPath = [1, 2, 3, 4, 5];
-              }}
-            >
-              {" "}
-              Calculate Optimal Path
-            </Button>
-              <br/>
               <br/>
             <Button
               onClick={(e) => {

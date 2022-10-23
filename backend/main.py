@@ -8,6 +8,7 @@ from flask_cors import CORS, cross_origin
 app = Flask(__name__)
 cors = CORS(app, resources={r"/foo": {"origins": "*"}})
 app.config["CORS_HEADERS"] = "Content-Type"
+np.random.seed(0)
 
 
 @app.route("/init", methods=["POST"])
