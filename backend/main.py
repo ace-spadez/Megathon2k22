@@ -22,7 +22,7 @@ def init():
             "width": np.random.random(),
             "bumps_and_potholes": np.random.random(),
             "noise": np.random.random(),
-            "time": np.random.random(),
+            "time": (time + 9) // 10,
             "likeability": np.random.random()
         }
         f_data.append(body)
