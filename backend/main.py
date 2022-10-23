@@ -2,11 +2,20 @@ from flask import Flask, request
 from collections import defaultdict
 import numpy as np
 import json
-app = Flask(__name__)
+from flask import Flask
+from flask_cors import CORS, cross_origin
 
-@app.route("/init")
+app = Flask(__name__)
+cors = CORS(app, resources={r"/foo": {"origins": "*"}})
+app.config["CORS_HEADERS"] = "Content-Type"
+
+
+@app.route("/init", methods=["POST"])
+@cross_origin(origin="*", headers=["Content-Type"])
 def init():
+    print(request)
     data = request.json
+    print(data)
     f_data = []
     for u, v, time in data["edges"]:
         body = {
@@ -23,28 +32,37 @@ def init():
             "bumps_and_potholes": np.random.random(),
             "noise": np.random.random(),
             "time": (time + 9) // 10,
-            "likeability": np.random.random()
+            "likeability": np.random.random(),
         }
         f_data.append(body)
+
     return json.dumps(f_data)
 
 
-@app.route("/find-likeability")
+@app.route("/find-likeability", methods=["POST"])
+@cross_origin(origin="*", headers=["Content-Type"])
 def find_likeability():
-    user_preference = request.json['user_preference']
-    edges = request.json['edges']
+    user_preference = request.json["user_preference"]
+    edges = request.json["edges"]
 
     # Use ML model for scoring once ready
-    scores = [user_preference['safety'] * ((1 - edge['accidents']) + (1 - edge['close_calls'])) + \
-        user_preference['smoothness'] * ((1 - edge['bumps_and_potholes']) + edge['width']) + \
-        user_preference['ambience'] * (1 - edge['noise']) + \
-        user_preference['privacy'] * (1 - edge['num_cctv']) + \
-        user_preference['mobile_network'] * edge['mobile_network'] + \
-        user_preference['view'] * (edge['touristy'] + edge['visibility']) + \
-        user_preference['charging_stations'] * edge['charging_stations'] for edge in edges ]
+    scores = {"data": [
+        user_preference["safety"]
+        * ((1 - edge["accidents"]) + (1 - edge["close_calls"]))
+        + user_preference["smoothness"]
+        * ((1 - edge["bumps_and_potholes"]) + edge["width"])
+        + user_preference["ambience"] * (1 - edge["noise"])
+        + user_preference["privacy"] * (1 - edge["num_cctv"])
+        + user_preference["mobile_network"] * edge["mobile_network"]
+        + user_preference["view"] * (edge["touristy"] + edge["visibility"])
+        + user_preference["charging_stations"] * edge["charging_stations"]
+        for edge in edges
+    ]}
 
-    print(user_preference, edges, scores)
+    # print(user_preference, edges, scores)
+    # print(json.dumps(scores))
     return json.dumps(scores)
+
 
 # self edges, self edges
 class Graph1:
@@ -65,7 +83,7 @@ class Graph1:
             unvisited.add(v)
             parent[v] = (-1, -1)
         dist[src] = 0
-        while (len(unvisited) > 0):
+        while len(unvisited) > 0:
             minDistance = self.INF
             minVertex = src
             for v in unvisited:
@@ -89,15 +107,18 @@ class Graph1:
         path.reverse()
         return json.dumps({"dist": dist[dst], "path": path})
 
-@app.route("/find-min-time-path")
+
+@app.route("/find-min-time-path", methods=["POST"])
+@cross_origin(origin="*", headers=["Content-Type"])
 def find_best_route():
-    src = request.json['source']
-    dst = request.json['destination']
-    graph = request.json['graph']
+    src = request.json["source"]
+    dst = request.json["destination"]
+    graph = request.json["graph"]
 
     g = Graph1()
-    g.build_graph(graph['edges'])
+    g.build_graph(graph["edges"])
     return g.distance(src, dst)
+
 
 # self edges, self edges
 class Graph2:
@@ -108,6 +129,7 @@ class Graph2:
         self.graph = defaultdict(list)
 
     def build_graph(self, edges):
+        print(edges)
         for id, (u, v, t, l) in enumerate(edges):
             if u == v:
                 continue
@@ -131,25 +153,35 @@ class Graph2:
         for _ in range(len(self.graph.keys())):
             for u in self.graph.keys():
                 for v, w, id in self.graph[u]:
-                    if dist[u] != self.INF and dist[u] + w < dist[v] and v[0] not in history[u[0]]:
+                    if (
+                        dist[u] != self.INF
+                        and dist[u] + w < dist[v]
+                        and v[0] not in history[u[0]]
+                    ):
                         dist[v] = dist[u] + w
                         parent[v] = (u, id)
                         history[v[0]] = history[u[0]] + [v[0]]
-        
+
         for u in self.graph.keys():
             for v, w, id in self.graph[u]:
-                if dist[u] != self.INF and dist[u] + w < dist[v] and v[0] not in history[u[0]]:
+                if (
+                    dist[u] != self.INF
+                    and dist[u] + w < dist[v]
+                    and v[0] not in history[u[0]]
+                ):
                     print("Not Working!")
-        
+
         best_likeability, node = 0, -1
         for t in range(request_time + 1):
+            if (dst, t) not in dist:
+                continue
             if dist[(dst, t)] < best_likeability:
                 best_likeability = dist[(dst, t)]
                 node = (dst, t)
-            
+
         if node == -1:
             return ""
-        
+
         curr = node
         path = []
         while curr != (src, 0):
@@ -158,17 +190,20 @@ class Graph2:
             path.append(id)
 
         return json.dumps({"likeability": -1 * best_likeability, "path": path})
-        
 
-@app.route("/find-closest-route")
+
+@app.route("/find-closest-route", methods=["POST"])
+@cross_origin(origin="*", headers=["Content-Type"])
 def find_closest_route():
-    src = request.json['source']
-    dst = request.json['destination']
-    request_time = request.json['request_time']
-    graph = request.json['graph']
+    src = request.json["source"]
+    dst = request.json["destination"]
+    request_time = request.json["request_time"]
+    graph = request.json["graph"]
+    print(request.json)
 
     g = Graph2()
-    g.build_graph(graph['edges'])
+    g.build_graph(graph["edges"])
     return g.closest_route(src, dst, request_time)
+
 
 app.run(debug=True)
